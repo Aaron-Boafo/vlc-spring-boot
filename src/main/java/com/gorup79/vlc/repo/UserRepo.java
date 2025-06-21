@@ -7,6 +7,5 @@ import com.gorup79.vlc.model.Users;
 
 @Repository
 public interface UserRepo extends MongoRepository<Users, Integer> {
-
-    Users findByUsername(String username);
+    Users findByPhoneNumber(String phoneNumber);
 }
