@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.gorup79.vlc.dto.LoginDTO;
 import com.gorup79.vlc.model.Users;
 import com.gorup79.vlc.repo.UserRepo;
 
@@ -36,7 +37,7 @@ public class UserService {
         return user;
     }
 
-    public String verify(Users user) {
+    public String verify(LoginDTO user) {
         Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getPhoneNumber(), user.getPassword()));
         if (authentication.isAuthenticated()) {
             return jwtService.generateToken(user.getPhoneNumber());

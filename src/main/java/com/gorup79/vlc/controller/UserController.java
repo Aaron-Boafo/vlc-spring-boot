@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.gorup79.vlc.dto.LoginDTO;
 import com.gorup79.vlc.model.Users;
 import com.gorup79.vlc.response.RegisterResponse;
 import com.gorup79.vlc.service.UserService;
@@ -46,7 +47,27 @@ public class UserController {
 
 
     @PostMapping("/login")
-    public String login(@RequestBody Users user) {
-        return service.verify(user);
+    public ResponseEntity<RegisterResponse<String>> login(@Valid @RequestBody LoginDTO user,
+            BindingResult bindingResult) {
+        
+        // Validate the user input
+          if (bindingResult.hasErrors()) {
+            String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, errorMsg, null));
+        }
+        
+        // Check if phone number already exists
+        if (!service.existsByPhoneNumber(user.getPhoneNumber())) {
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Phone number doesn't exists", null));
+        }
+
+        String validity = service.verify(user);
+
+        if(validity === "fail") {
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Check your password", validity));
+            
+        }
+
+         return ResponseEntity.ok(new RegisterResponse<>(true, "User authenticated successfully", validity));//returns a jwt
     }
 }

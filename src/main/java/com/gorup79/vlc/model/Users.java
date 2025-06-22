@@ -1,5 +1,6 @@
 package com.gorup79.vlc.model;
 
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class Users {
 
+    @Id
     private String id; //uuid generated string
 
     @NotNull(message = "Phone number must not be null")
