@@ -2,7 +2,10 @@ package com.gorup79.vlc.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.gorup79.vlc.dto.UpdateProfileDTO;
 import com.gorup79.vlc.dto.UserInfo;
 import com.gorup79.vlc.model.Profile;
 import com.gorup79.vlc.model.Users;
@@ -47,6 +50,35 @@ public class ProfileServices {
             return null;
         }
         
+    }
+
+    @Transactional
+    public String updateProfile(UpdateProfileDTO data, MultipartFile image) {
+        try {
+            // Get the current user's ID from authentication context
+            String userId = userService.getCurrentUser();
+
+            // Fetch profile by userId
+            Profile profile = repo.findByUserId(userId);
+
+            //save the user name in a string
+            String username = data.getUsername();
+
+            if (username == null || username.isEmpty()) {
+                username = profile.getUsername();
+            }
+            
+            // Update user and profile information
+            profile.setUsername(username);
+
+            // Save changes
+            repo.save(profile);
+
+            return "Profile updated successfully";
+
+        } catch (Exception e) {
+            return "Error";
+        }
     }
     
 }

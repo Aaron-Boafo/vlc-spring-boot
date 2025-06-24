@@ -101,21 +101,4 @@ public class UserController {
         return ResponseEntity.ok(new RegisterResponse<>(true, "Password reset successfully", resetStatus));
     }
 
-
-    //get the users details
-    @PostMapping("/get-user")
-    public ResponseEntity<RegisterResponse<Users>> getUser() {
-
-        try {
-             Users foundUser = service.getUserById(service.getCurrentUser());
-            if (foundUser == null) {
-                return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "User not found", null));
-            }
-
-        return ResponseEntity.ok(new RegisterResponse<>(true, "User found", foundUser));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Error occurred", null));
-        }
-       
-    }
 }
