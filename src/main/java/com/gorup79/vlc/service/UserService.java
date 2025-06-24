@@ -96,8 +96,10 @@ public class UserService {
             // turn the paasword into a hash
             String hashedPassword = encoder.encode(user.getPassword());
 
-            // Update the user's password
+            // Update the user's password and updatedAt timestamp
             dbUser.setPassword(hashedPassword);
+            dbUser.setUpdatedAt(LocalDateTime.now()); 
+
             repo.save(dbUser);
 
             // Return success message 
