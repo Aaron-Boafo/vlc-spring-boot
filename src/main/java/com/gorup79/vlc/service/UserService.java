@@ -1,17 +1,22 @@
 package com.gorup79.vlc.service;
 
 import java.util.UUID;
+import java.time.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.gorup79.vlc.dto.LoginDTO;
+import com.gorup79.vlc.model.Profile;
 import com.gorup79.vlc.model.Users;
+import com.gorup79.vlc.repo.ProfileRepo;
 import com.gorup79.vlc.repo.UserRepo;
 
 @Service
@@ -26,30 +31,45 @@ public class UserService {
     @Autowired
     private UserRepo repo;
 
+    @Autowired
+    private ProfileRepo profile;
+
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
+    @Transactional
     public Users register(Users user) {
-        user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
-        user.setId(UUID.randomUUID().toString()); // change the ID generation to UUID
-        user.setCreatedAt(java.time.LocalDateTime.now()); // set the creation time
 
-        repo.save(user);
-        return user;
+        try {
+            //generate an id for each user
+            String uuid =UUID.randomUUID().toString();
+            LocalDateTime currentTime = java.time.LocalDateTime.now();
+
+            user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
+            user.setId(uuid); 
+            user.setCreatedAt(currentTime); // set the creation time
+
+            //save the user
+            repo.save(user);
+
+            //create a profile for the new user
+            profile.save(new Profile(UUID.randomUUID().toString(),uuid,user.getPhoneNumber(),0.00,null));
+            
+            //return the user after all is saved
+            return user;
+
+        } catch (Exception e) {
+            //if an error occured returna null
+            return null;
+        }
+        
     }
 
     public String verify(LoginDTO user) {
-
         try {
             Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getPhoneNumber(), user.getPassword()));
                 if (authentication.isAuthenticated()) {
-                    // Get the user by phone number
-                    Users dbUser = repo.findByPhoneNumber(user.getPhoneNumber());
-                    if (dbUser == null) {
-                        return "fail";
-                    }
-                    // Generate JWT token using the user's ID
-                    return jwtService.generateToken(dbUser.getId());
+                    return jwtService.generateToken(user.getPhoneNumber()); // Generate JWT token for the user
                 } else {
                     return "fail";
                 }
@@ -57,28 +77,74 @@ public class UserService {
         } catch (AuthenticationException e) {
             return "fail"; // Error occurred while checking user
         }
-        
     }
 
     public boolean existsByPhoneNumber(String phoneNumber) {
         return repo.findByPhoneNumber(phoneNumber) != null;
     }
 
+    @Transactional
     public String resetPassword(LoginDTO user) {
-        // Find the user by phone number
-        Users dbUser = repo.findByPhoneNumber(user.getPhoneNumber());
-        if (dbUser == null) {
-            return "fail"; // User not found
+
+        try {
+            // Find the user by phone number
+            Users dbUser = repo.findByPhoneNumber(user.getPhoneNumber());
+            if (dbUser == null) {
+                return "fail"; // User not found
+            }
+
+            // turn the paasword into a hash
+            String hashedPassword = encoder.encode(user.getPassword());
+
+            // Update the user's password
+            dbUser.setPassword(hashedPassword);
+            repo.save(dbUser);
+
+            // Return success message 
+            return "success"; 
+            
+        } catch (Exception e) {
+            return "fail"; // Error occurred while checking user
         }
+        
+    }
 
-        // turn the paasword into a hash
-        String hashedPassword = encoder.encode(user.getPassword());
+    
+    public String getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userId = authentication.getName(); 
 
-        // Update the user's password
-        dbUser.setPassword(hashedPassword);
-        repo.save(dbUser);
+            //get the user by phone number
+            Users user = repo.findByPhoneNumber(userId);
 
-        // Return success message 
-        return "success"; 
+            if (user == null) {
+                return null; 
+            }
+            
+            // return the user id for all searches
+            return user.getId();
+            
+        } catch (Exception e) {
+            return null; // If an error occurs, return null
+        }
+         
+    }
+
+    public Users getUserById(){
+        Users user;
+        try {
+            user = repo.findById(getCurrentUser()); // Get the current user's phone number
+
+            if (user == null) {
+                return null; 
+            }
+
+            // If user is found, return the user object
+            return user; 
+            
+        } catch (Exception e) {
+            return null; // If an error occurs, return null
+        }
     }
 }

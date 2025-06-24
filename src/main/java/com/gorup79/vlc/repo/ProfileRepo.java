@@ -8,4 +8,6 @@ import com.gorup79.vlc.model.Profile;
 @Repository
 public interface  ProfileRepo extends MongoRepository<Profile, String> {
 
+    Profile findByUserId(String userId);
+
 }
