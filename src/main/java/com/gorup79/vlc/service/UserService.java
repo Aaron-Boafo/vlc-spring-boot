@@ -149,4 +149,6 @@ public class UserService {
             return null; // If an error occurs, return null
         }
     }
+
+    public void removeTokenFromCache(String token) {}
 }

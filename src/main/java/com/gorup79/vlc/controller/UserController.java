@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +16,7 @@ import com.gorup79.vlc.response.RegisterResponse;
 import com.gorup79.vlc.service.UserService;
 // import com.gorup79.vlc.util.OtpUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -100,5 +102,22 @@ public class UserController {
 
         return ResponseEntity.ok(new RegisterResponse<>(true, "Password reset successfully", resetStatus));
     }
+
+    @GetMapping("/logout")
+    public ResponseEntity<RegisterResponse<String>> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
+            // remove thr token from the cache
+            service.removeTokenFromCache(token);
+
+            return ResponseEntity.ok(new RegisterResponse<>(true, "User logged out successfully", "Logout successful"));
+        }
+
+        return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "No token provided", null));
+    }
+
 
 }
