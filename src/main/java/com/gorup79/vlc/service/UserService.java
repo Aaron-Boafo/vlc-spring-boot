@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,15 +39,46 @@ public class UserService {
     }
 
     public String verify(LoginDTO user) {
-        Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getPhoneNumber(), user.getPassword()));
-        if (authentication.isAuthenticated()) {
-            return jwtService.generateToken(user.getPhoneNumber());
-        } else {
-            return "fail";
+
+        try {
+            Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getPhoneNumber(), user.getPassword()));
+                if (authentication.isAuthenticated()) {
+                    // Get the user by phone number
+                    Users dbUser = repo.findByPhoneNumber(user.getPhoneNumber());
+                    if (dbUser == null) {
+                        return "fail";
+                    }
+                    // Generate JWT token using the user's ID
+                    return jwtService.generateToken(dbUser.getId());
+                } else {
+                    return "fail";
+                }
+            
+        } catch (AuthenticationException e) {
+            return "fail"; // Error occurred while checking user
         }
+        
     }
 
     public boolean existsByPhoneNumber(String phoneNumber) {
         return repo.findByPhoneNumber(phoneNumber) != null;
+    }
+
+    public String resetPassword(LoginDTO user) {
+        // Find the user by phone number
+        Users dbUser = repo.findByPhoneNumber(user.getPhoneNumber());
+        if (dbUser == null) {
+            return "fail"; // User not found
+        }
+
+        // turn the paasword into a hash
+        String hashedPassword = encoder.encode(user.getPassword());
+
+        // Update the user's password
+        dbUser.setPassword(hashedPassword);
+        repo.save(dbUser);
+
+        // Return success message 
+        return "success"; 
     }
 }

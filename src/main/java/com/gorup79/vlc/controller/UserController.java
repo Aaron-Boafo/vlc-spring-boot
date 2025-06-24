@@ -71,4 +71,28 @@ public class UserController {
         String validity = service.verify(user);
         return ResponseEntity.ok(new RegisterResponse<>(true, "User authenticated successfully", new JwtDTO(validity)));//returns a jwt
     }
+
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<RegisterResponse<String>> resetPassword(@Valid @RequestBody LoginDTO user,
+            BindingResult bindingResult) {
+        
+        // Validate the user input
+          if (bindingResult.hasErrors()) {
+            String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, errorMsg, null));
+        }
+        
+        // Check if phone number exists
+        if (!service.existsByPhoneNumber(user.getPhoneNumber())) {
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Phone number doesn't exists", null));
+        }
+
+        String resetStatus = service.resetPassword(user);
+        if ("fail".equals(resetStatus)) {
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Failed to reset password", null));
+        }
+
+        return ResponseEntity.ok(new RegisterResponse<>(true, "Password reset successfully", resetStatus));
+    }
 }

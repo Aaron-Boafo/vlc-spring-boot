@@ -31,9 +31,9 @@ public class SecurityConfig {
 
         return http.csrf(customizer -> customizer.disable()).
                 authorizeHttpRequests(request -> request
-                        .requestMatchers("/login", "/register").permitAll()
+                        .requestMatchers("/login", "/register","reset-password").permitAll()
                         .anyRequest().authenticated()).
-                httpBasic(Customizer.withDefaults()).
+                httpBasic(Customizer.withDefaults()).  
                 sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
