@@ -14,5 +14,5 @@ public class FileUploadDTO {
     
     private String fileName;
     private String fileType;
-    private long description;
+    private String description;
 }

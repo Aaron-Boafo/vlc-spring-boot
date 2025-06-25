@@ -91,5 +91,17 @@ public class ProfileServices {
             return "Error";
         }
     }
+
+    public Profile getProfileByUserId(String userId) {
+        try {
+            return repo.findByUserId(userId);
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
     
+
+
 }

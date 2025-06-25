@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.gorup79.vlc.dto.FileUploadDTO;
+import com.gorup79.vlc.model.Profile;
 import com.gorup79.vlc.model.Storage;
+import com.gorup79.vlc.repo.ProfileRepo;
 import com.gorup79.vlc.repo.StorageRepo;
 
 @Service
@@ -22,6 +24,12 @@ public class StorageService {
 
     @Autowired
     private StorageRepo storageRepo; // Assuming you have a repository to handle storage operations
+
+    @Autowired
+    private ProfileServices profileService; // Assuming you have a service to handle user profiles
+
+    @Autowired
+    private ProfileRepo profileRepository; // Assuming you have a repository to handle profile operations
 
     public List<Storage> getAllStorageInfo() {
         try {
@@ -80,12 +88,19 @@ public class StorageService {
             // Get the current user
             String userId = userService.getCurrentUser();
             Storage data = new Storage();
+             Double size ; 
+
+            if(file.getSize() == 0) {
+                size = 0.0;
+            }else {
+                size = (double) file.getSize() / (1024 * 1024);
+            }
 
             if (userId == null) {
                 throw new RuntimeException("User not authenticated");
             }
 
-            if (file == null || file.isEmpty()) {
+            if (file.isEmpty()) {
                 throw new RuntimeException("File is empty or not provided");
             }
 
@@ -105,6 +120,18 @@ public class StorageService {
                 data.setFileType(metadata.getFileType());
             }
 
+            data.setDescription(metadata.getDescription() != null ? metadata.getDescription() : "No description provided");
+            data.setSize(file.getSize());
+
+            //get the users details and set the size
+            Profile userProfile = profileService.getProfileByUserId(userId);
+
+            if (userProfile == null) {
+                throw new RuntimeException("User profile not found");
+            }
+
+            userProfile.setStorageUsed(userProfile.getStorageUsed() + size);
+
             //send the file to the storage location
             String secureUrl = cloud.uploadAndReturnUrl(file);
 
@@ -115,6 +142,7 @@ public class StorageService {
             data.setStorageLocation(secureUrl);
             
             //finally save the data
+            profileRepository.save(userProfile);
             storageRepo.save(data);
             return "success";
 

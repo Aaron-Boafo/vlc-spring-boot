@@ -64,10 +64,12 @@ public class StorageController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<RegisterResponse<String>> addStorageInfo(@RequestPart FileUploadDTO metadata, @RequestPart MultipartFile file) {
+    public ResponseEntity<RegisterResponse<?>> addStorageInfo(@RequestPart("metadata") FileUploadDTO metadata, @RequestPart("file") MultipartFile file) {
+        System.out.println("Adding storage information: " + metadata + ", file: " + file.getOriginalFilename());
         try {
 
             String results = service.add(metadata, file);
+            
 
             if("Error".equals(results)){
                 throw new Exception("Error");
