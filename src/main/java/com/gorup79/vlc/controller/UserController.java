@@ -25,8 +25,6 @@ public class UserController {
     @Autowired
     private UserService service;
 
-    // @Autowired
-    // private OtpUtil otpGenerator;
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse<Users>> register(@Valid @RequestBody LoginDTO user,
