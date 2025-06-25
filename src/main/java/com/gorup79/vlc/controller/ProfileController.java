@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +18,7 @@ import com.gorup79.vlc.response.RegisterResponse;
 import com.gorup79.vlc.service.ProfileServices;
 
 @RestController
-@CrossOrigin("*")
+@CrossOrigin
 @RequestMapping("/profile")
 public class ProfileController {
     @Autowired
@@ -38,13 +39,11 @@ public class ProfileController {
        
     }
 
-    @PostMapping("/update")
-    public ResponseEntity<RegisterResponse<String>> updateProfile(
-            @RequestPart(value = "data", required = false) UpdateProfileDTO data,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
+    @PostMapping("/update/name")
+    public ResponseEntity<RegisterResponse<String>> updateProfile(@RequestBody UpdateProfileDTO data) {
         try {
             // Call the service to update the profile
-            String result = profileService.updateProfile(data, image);
+            String result = profileService.updateProfileName(data);
 
             if (result == null || "Error".equals(result)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -56,6 +55,25 @@ public class ProfileController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new RegisterResponse<>(false, "Failed to update Profile", null));
+        }
+    }
+
+    @PostMapping("/update/picture")
+    public ResponseEntity<RegisterResponse<String>> updateProfilePicture(@RequestPart MultipartFile file) {
+        try {
+            // Call the service to update the profile picture
+            String result = profileService.updateProfilePicture(file);
+
+            if (result == null || "Error".equals(result)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new RegisterResponse<>(false, "Failed to update Profile Picture", null));
+            }
+
+            return ResponseEntity.ok(new RegisterResponse<>(true, "Profile Picture updated successfully", result));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new RegisterResponse<>(false, "Failed to update Profile Picture", null));
         }
     }
 

@@ -56,12 +56,9 @@ public class ProfileServices {
     }
 
     @Transactional
-    public String updateProfile(UpdateProfileDTO data, MultipartFile image) {
+    public String updateProfileName(UpdateProfileDTO data) {
         try {
-            // Get the current user's ID from authentication context
             String userId = userService.getCurrentUser();
-
-            // Fetch profile by userId
             Profile profile = repo.findByUserId(userId);
 
             //save the user name in a string
@@ -71,28 +68,25 @@ public class ProfileServices {
                 username = profile.getUsername();
             }
 
-            //check if the the image is not null
-            if (image != null && !image.isEmpty()) {
-                // Upload the image to cloudinary
-                String imageUrl = cloud.uploadAndReturnUrl(image) ;
-                
-                // Check if the upload was successful
-                if (imageUrl == null || imageUrl.isEmpty()) {
-                    throw new Exception("Error");
-                }
-
-                // Update profile picture URL
-                profile.setProfilePictureUrl(imageUrl);
-            }
-            
-            // Update user and profile information
             profile.setUsername(username);
-
-            // Save changes
             repo.save(profile);
 
             return "Profile updated successfully";
 
+        } catch (Exception e) {
+            return "Error";
+        }
+    }
+
+    @Transactional
+    public String updateProfilePicture(MultipartFile file) {
+        try {
+            String userId = userService.getCurrentUser();
+            Profile profile = repo.findByUserId(userId);
+            String secureUrl = cloud.uploadAndReturnUrl(file);
+            profile.setProfilePictureUrl(secureUrl);
+            repo.save(profile);
+            return "Profile picture updated successfully";
         } catch (Exception e) {
             return "Error";
         }
