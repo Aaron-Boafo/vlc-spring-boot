@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -70,5 +71,22 @@ public class StorageController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<RegisterResponse<?>> deleteStorage(@PathVariable String id) {
+
+        try {
+            // Get the storage information by ID
+            Storage storage = service.getStorageInfoById(id);
+
+            if (storage == null) {
+                return ResponseEntity.ok(new RegisterResponse<>(false, "No storage information found.", null));
+            }
+
+            return ResponseEntity.ok(new RegisterResponse<>(true, "Storage information retrieved successfully.", storage));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
+        }
+
+    }
 
 }
