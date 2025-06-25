@@ -1,7 +1,7 @@
 package com.gorup79.vlc.service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
-import java.time.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,25 +38,29 @@ public class UserService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     @Transactional
-    public Users register(Users user) {
+    public Users register(LoginDTO user) {
 
         try {
             //generate an id for each user
             String uuid =UUID.randomUUID().toString();
             LocalDateTime currentTime = java.time.LocalDateTime.now();
 
-            user.setPassword(encoder.encode(user.getPassword())); // encrypt the password
-            user.setId(uuid); 
-            user.setCreatedAt(currentTime); // set the creation time
+            //create an instance of a new user
+            Users DBuser = new Users();
+
+            DBuser.setPhoneNumber(user.getPhoneNumber());
+            DBuser.setPassword(encoder.encode(user.getPassword())); // encrypt the password
+            DBuser.setId(uuid);
+            DBuser.setCreatedAt(currentTime); // set the creation time
 
             //save the user
-            repo.save(user);
+            repo.save(DBuser);
 
             //create a profile for the new user
             profile.save(new Profile(UUID.randomUUID().toString(),uuid,user.getPhoneNumber(),0.00,null));
             
             //return the user after all is saved
-            return user;
+            return DBuser;
 
         } catch (Exception e) {
             //if an error occured returna null

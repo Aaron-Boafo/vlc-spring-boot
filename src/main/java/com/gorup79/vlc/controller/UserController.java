@@ -14,7 +14,6 @@ import com.gorup79.vlc.dto.LoginDTO;
 import com.gorup79.vlc.model.Users;
 import com.gorup79.vlc.response.RegisterResponse;
 import com.gorup79.vlc.service.UserService;
-// import com.gorup79.vlc.util.OtpUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -30,7 +29,7 @@ public class UserController {
     // private OtpUtil otpGenerator;
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse<Users>> register(@Valid @RequestBody Users user,
+    public ResponseEntity<RegisterResponse<Users>> register(@Valid @RequestBody LoginDTO user,
             BindingResult bindingResult) {
 
         // Validate the user input
