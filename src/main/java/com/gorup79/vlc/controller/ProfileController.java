@@ -17,7 +17,7 @@ import com.gorup79.vlc.response.RegisterResponse;
 import com.gorup79.vlc.service.ProfileServices;
 
 @RestController
-@CrossOrigin
+@CrossOrigin("*")
 @RequestMapping("/profile")
 public class ProfileController {
     @Autowired
@@ -39,20 +39,25 @@ public class ProfileController {
     }
 
     @PostMapping("/update")
-    public ResponseEntity<RegisterResponse<String>> updateProfile(@RequestPart UpdateProfileDTO data, @RequestPart MultipartFile image) {
+    public ResponseEntity<RegisterResponse<String>> updateProfile(
+            @RequestPart(value = "data", required = false) UpdateProfileDTO data,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
         try {
             // Call the service to update the profile
             String result = profileService.updateProfile(data, image);
 
             if (result == null || "Error".equals(result)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new RegisterResponse<>(false, "Failed to update Profile", null));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new RegisterResponse<>(false, "Failed to update Profile", null));
             }
 
-            return ResponseEntity.ok().body(new RegisterResponse<>(true, "Profile updated successfully", result));
+            return ResponseEntity.ok(new RegisterResponse<>(true, "Profile updated successfully", result));
 
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Failed to update Profile", null));
+            return ResponseEntity.badRequest()
+                    .body(new RegisterResponse<>(false, "Failed to update Profile", null));
         }
     }
+
     
 }

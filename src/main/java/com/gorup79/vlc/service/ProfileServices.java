@@ -20,6 +20,9 @@ public class ProfileServices {
     @Autowired
     private UserService userService; //get the current user from authentication context
 
+    @Autowired
+    CloudinaryServive cloud;
+
     public UserInfo getProfile() {
         try {
             // Get the current user's ID from authentication context
@@ -66,6 +69,20 @@ public class ProfileServices {
 
             if (username == null || username.isEmpty()) {
                 username = profile.getUsername();
+            }
+
+            //check if the the image is not null
+            if (image != null && !image.isEmpty()) {
+                // Upload the image to cloudinary
+                String imageUrl = cloud.uploadAndReturnUrl(image) ;
+                
+                // Check if the upload was successful
+                if (imageUrl == null || imageUrl.isEmpty()) {
+                    throw new Exception("Error");
+                }
+
+                // Update profile picture URL
+                profile.setProfilePictureUrl(imageUrl);
             }
             
             // Update user and profile information
