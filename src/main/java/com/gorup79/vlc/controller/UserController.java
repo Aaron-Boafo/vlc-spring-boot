@@ -25,17 +25,16 @@ public class UserController {
     @Autowired
     private UserService service;
 
-
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse<Users>> register(@Valid @RequestBody LoginDTO user,
             BindingResult bindingResult) {
 
         // Validate the user input
-          if (bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
             return ResponseEntity.badRequest().body(new RegisterResponse<>(false, errorMsg, null));
         }
-        
+
         // Check if phone number already exists
         if (service.existsByPhoneNumber(user.getPhoneNumber())) {
             return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Phone number already exists", null));
@@ -44,60 +43,75 @@ public class UserController {
         // Register the user
         Users registeredUser = service.register(user);
 
-        if(registeredUser == null) {
+        if (registeredUser == null) {
             return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "An internal error occured", null));
 
         }
         return ResponseEntity.ok(new RegisterResponse<>(true, "User registered successfully", registeredUser));
     }
 
-
-
     @PostMapping("/login")
-    public ResponseEntity<RegisterResponse<JwtDTO>> login(@Valid @RequestBody LoginDTO user,
+    public ResponseEntity<RegisterResponse<?>> login(@Valid @RequestBody LoginDTO user,
             BindingResult bindingResult) {
-        
-        // Validate the user input
-          if (bindingResult.hasErrors()) {
-            String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, errorMsg, null));
-        }
-        
-        // Check if phone number already exists
-        if (!service.existsByPhoneNumber(user.getPhoneNumber())) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Phone number doesn't exists", null));
+
+        try {
+
+            // Validate the user input
+            if (bindingResult.hasErrors()) {
+                String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
+                return ResponseEntity.badRequest().body(new RegisterResponse<>(false, errorMsg, null));
+            }
+
+            // Check if phone number already exists
+            if (!service.existsByPhoneNumber(user.getPhoneNumber())) {
+                return ResponseEntity.badRequest()
+                        .body(new RegisterResponse<>(false, "Phone number doesn't exists", null));
+            }
+
+            if (service.verify(user) == null || "fail".equals(service.verify(user))) {
+                return ResponseEntity.badRequest()
+                        .body(new RegisterResponse<>(false, "Invalid credentials, please try again",
+                                null));
+            }
+
+            String validity = service.verify(user);
+            return ResponseEntity
+                    .ok(new RegisterResponse<>(true, "User authenticated successfully", new JwtDTO(validity)));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, e.getMessage(), null));
         }
 
-        if(service.verify(user) == null || "fail".equals(service.verify(user))) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Check your password",  new JwtDTO(service.verify(user))) );
-        }
-
-        String validity = service.verify(user);
-        return ResponseEntity.ok(new RegisterResponse<>(true, "User authenticated successfully", new JwtDTO(validity)));//returns a jwt
     }
-
 
     @PostMapping("/reset-password")
     public ResponseEntity<RegisterResponse<String>> resetPassword(@Valid @RequestBody LoginDTO user,
             BindingResult bindingResult) {
-        
-        // Validate the user input
-          if (bindingResult.hasErrors()) {
-            String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, errorMsg, null));
-        }
-        
-        // Check if phone number exists
-        if (!service.existsByPhoneNumber(user.getPhoneNumber())) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Phone number doesn't exists", null));
+
+        try {
+            // Validate the user input
+            if (bindingResult.hasErrors()) {
+                String errorMsg = bindingResult.getAllErrors().get(0).getDefaultMessage();
+                return ResponseEntity.badRequest().body(new RegisterResponse<>(false, errorMsg, null));
+            }
+
+            // Check if phone number exists
+            if (!service.existsByPhoneNumber(user.getPhoneNumber())) {
+                return ResponseEntity.badRequest()
+                        .body(new RegisterResponse<>(false, "Phone number doesn't exists", null));
+            }
+
+            String resetStatus = service.resetPassword(user);
+            if (!"success".equals(resetStatus)) {
+                return ResponseEntity.badRequest().body(new RegisterResponse<>(false, resetStatus, null));
+            }
+
+            return ResponseEntity.ok(new RegisterResponse<>(true, "Password reset successfully", resetStatus));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, e.getMessage(), null));
         }
 
-        String resetStatus = service.resetPassword(user);
-        if ("fail".equals(resetStatus)) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Failed to reset password", null));
-        }
-
-        return ResponseEntity.ok(new RegisterResponse<>(true, "Password reset successfully", resetStatus));
     }
 
     @GetMapping("/logout")
@@ -115,6 +129,5 @@ public class UserController {
 
         return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "No token provided", null));
     }
-
 
 }

@@ -17,7 +17,7 @@ import com.gorup79.vlc.repo.StorageRepo;
 public class StorageService {
 
     @Autowired
-    private UserService userService; 
+    private UserService userService;
 
     @Autowired
     private CloudinaryServive cloud; // Assuming you have a service to handle cloud storage operations
@@ -45,7 +45,7 @@ public class StorageService {
         } catch (Exception e) {
             return null; // If an error occurs, return null
         }
-        
+
     }
 
     public String deleteInfoById(String id) {
@@ -58,8 +58,8 @@ public class StorageService {
 
             boolean results = cloud.delete(data.getStorageLocation());
 
-            if(!results){
-                return "An error occured whiles deleting the data";
+            if (!results) {
+                return "An error occurred whiles deleting the data";
             }
 
             return "success";
@@ -79,20 +79,20 @@ public class StorageService {
 
             return storageRepo.findById(id).orElse(null);
         } catch (Exception e) {
-            return null; 
+            return null;
         }
     }
 
     public String add(FileUploadDTO metadata, MultipartFile file) {
-       try {
+        try {
             // Get the current user
             String userId = userService.getCurrentUser();
             Storage data = new Storage();
-             Double size ; 
+            Double size;
 
-            if(file.getSize() == 0) {
+            if (file.getSize() == 0) {
                 size = 0.0;
-            }else {
+            } else {
                 size = (double) file.getSize() / (1024 * 1024);
             }
 
@@ -107,10 +107,10 @@ public class StorageService {
             data.setUserId(userId);
             data.setId(UUID.randomUUID().toString());
             data.setCreatedAt(java.time.LocalDateTime.now());
-            
+
             if (metadata.getFileName() == null || metadata.getFileName().isEmpty()) {
                 data.setFileName(file.getOriginalFilename());
-            }else {
+            } else {
                 data.setFileName(metadata.getFileName());
             }
 
@@ -120,10 +120,11 @@ public class StorageService {
                 data.setFileType(metadata.getFileType());
             }
 
-            data.setDescription(metadata.getDescription() != null ? metadata.getDescription() : "No description provided");
+            data.setDescription(
+                    metadata.getDescription() != null ? metadata.getDescription() : "No description provided");
             data.setSize(file.getSize());
 
-            //get the users details and set the size
+            // get the users details and set the size
             Profile userProfile = profileService.getProfileByUserId(userId);
 
             if (userProfile == null) {
@@ -132,23 +133,23 @@ public class StorageService {
 
             userProfile.setStorageUsed(userProfile.getStorageUsed() + size);
 
-            //send the file to the storage location
+            // send the file to the storage location
             String secureUrl = cloud.uploadAndReturnUrl(file);
 
-            if (secureUrl == null ) {
+            if (secureUrl == null) {
                 throw new RuntimeException("File is empty or not provided");
             }
 
             data.setStorageLocation(secureUrl);
-            
-            //finally save the data
+
+            // finally save the data
             profileRepository.save(userProfile);
             storageRepo.save(data);
             return "success";
 
         } catch (RuntimeException e) {
-        return "Error";
-       }
+            return "Error";
+        }
     }
 
 }

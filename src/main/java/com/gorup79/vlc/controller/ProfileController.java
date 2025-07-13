@@ -28,15 +28,15 @@ public class ProfileController {
     public ResponseEntity<RegisterResponse<UserInfo>> getProfile() {
 
         try {
-            //create an instance of profile
             UserInfo profile = profileService.getProfile();
+            return ResponseEntity.ok()
+                    .body(new RegisterResponse<>(true, "User profile retrieved successfully", profile));
 
-            return ResponseEntity.ok().body(new RegisterResponse<>(true, "User profile retrieved successfully", profile));
-            
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "Failed to retrieve user profile", null));
+            return ResponseEntity.badRequest()
+                    .body(new RegisterResponse<>(false, "Failed to retrieve user profile", null));
         }
-       
+
     }
 
     @PostMapping("/update/name")
@@ -77,5 +77,4 @@ public class ProfileController {
         }
     }
 
-    
 }
