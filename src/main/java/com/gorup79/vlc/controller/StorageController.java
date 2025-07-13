@@ -26,23 +26,25 @@ public class StorageController {
 
     @Autowired
     private StorageService service; // Assuming you have a service to handle storage operations
-   
+
     @GetMapping()
-    public ResponseEntity<RegisterResponse<List<Storage>>> getStorageInfo() {
+    public ResponseEntity<RegisterResponse<List<?>>> getStorageInfo() {
 
         try {
             // get all the list of storage information
             List<Storage> storageList = service.getAllStorageInfo();
-            
+
             if (storageList == null) {
                 return ResponseEntity.ok(new RegisterResponse<>(false, "No storage information found.", null));
             }
 
-            return ResponseEntity.ok(new RegisterResponse<>(true, "Storage information retrieved successfully.", storageList));
+            return ResponseEntity
+                    .ok(new RegisterResponse<>(true, "Storage information retrieved successfully.", storageList));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
+            return ResponseEntity.badRequest()
+                    .body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
         }
-       
+
     }
 
     @GetMapping("/{id}")
@@ -56,30 +58,33 @@ public class StorageController {
                 return ResponseEntity.ok(new RegisterResponse<>(false, "No storage information found.", null));
             }
 
-            return ResponseEntity.ok(new RegisterResponse<>(true, "Storage information retrieved successfully.", storage));
+            return ResponseEntity
+                    .ok(new RegisterResponse<>(true, "Storage information retrieved successfully.", storage));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
+            return ResponseEntity.badRequest()
+                    .body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
         }
 
     }
 
     @PostMapping("/add")
-    public ResponseEntity<RegisterResponse<?>> addStorageInfo(@RequestPart("metadata") FileUploadDTO metadata, @RequestPart("file") MultipartFile file) {
+    public ResponseEntity<RegisterResponse<?>> addStorageInfo(@RequestPart("metadata") FileUploadDTO metadata,
+            @RequestPart("file") MultipartFile file) {
         System.out.println("Adding storage information: " + metadata + ", file: " + file.getOriginalFilename());
         try {
 
             String results = service.add(metadata, file);
-            
 
-            if("Error".equals(results)){
+            if ("Error".equals(results)) {
                 throw new Exception("Error");
             }
 
             // Save the storage information
             return ResponseEntity.ok(new RegisterResponse<>(true, "Storage information added successfully.", null));
-        
+
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
+            return ResponseEntity.badRequest()
+                    .body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
         }
     }
 
@@ -87,7 +92,7 @@ public class StorageController {
     public ResponseEntity<RegisterResponse<?>> deleteStorage(@PathVariable String id) {
 
         try {
-            // Get the storage information by ID
+            // delete stored information by ID
             String storage = service.deleteInfoById(id);
 
             if (storage == null) {
@@ -95,13 +100,15 @@ public class StorageController {
             }
 
             if (!"success".equals(storage)) {
-                return ResponseEntity.ok(new RegisterResponse<>(false, "An error occured whiles deleting the data", null));
-                
+                return ResponseEntity
+                        .ok(new RegisterResponse<>(false, "An error occured whiles deleting the data", null));
+
             }
 
             return ResponseEntity.ok(new RegisterResponse<>(true, "Storage information retrieved successfully.", null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
+            return ResponseEntity.badRequest()
+                    .body(new RegisterResponse<>(false, "An error occurred while checking authentication.", null));
         }
 
     }
