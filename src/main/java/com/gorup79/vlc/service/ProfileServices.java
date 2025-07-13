@@ -18,50 +18,39 @@ public class ProfileServices {
     private ProfileRepo repo; // to get the profile from the database
 
     @Autowired
-    private UserService userService; //get the current user from authentication context
+    private UserService userService; // get the current user from authentication context
 
     @Autowired
     CloudinaryServive cloud;
 
     public UserInfo getProfile() {
-        try {
-            // Get the current user's ID from authentication context
-            String userId = userService.getCurrentUser();
+        // Get the current user's ID from authentication context
+        String userId = userService.getCurrentUser();
 
-            // Fetch user and profile by userId
-            Users user = userService.getUserById();
-            Profile profile = repo.findByUserId(userId);
+        // Fetch user and profile by userId
+        Users user = userService.getUserById();
+        Profile profile = repo.findByUserId(userId);
 
-            // Check for nulls
-            if (user == null || profile == null) {
-                return null;
-            }
+        // Build UserInfo
+        UserInfo userInfo = new UserInfo();
+        userInfo.setId(user.getId() != null ? user.getId() : null);
+        userInfo.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : null);
+        userInfo.setUsername(profile.getUsername() != null ? profile.getUsername() : null);
+        userInfo.setStorageUsed(profile.getStorageUsed());
+        userInfo.setProfilePicture(profile.getProfilePictureUrl() != null ? profile.getProfilePictureUrl() : null);
+        userInfo.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
+        userInfo.setUpdatedAt(user.getUpdatedAt() != null ? user.getUpdatedAt().toString() : null);
 
-            // Build UserInfo
-            UserInfo userInfo = new UserInfo();
-            userInfo.setId(user.getId() != null ? user.getId() : null);
-            userInfo.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : null);
-            userInfo.setUsername(profile.getUsername() != null ? profile.getUsername() : null);
-            userInfo.setStorageUsed(profile.getStorageUsed());
-            userInfo.setProfilePicture(profile.getProfilePictureUrl() != null ? profile.getProfilePictureUrl() : null);
-            userInfo.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
-            userInfo.setUpdatedAt(user.getUpdatedAt() != null ? user.getUpdatedAt().toString() : null);
-
-            return userInfo;
-
-        } catch (Exception e) {
-            return null;
-        }
-        
+        return userInfo;
     }
 
     @Transactional
-    public String updateProfileName(UpdateProfileDTO data) {
+    public String updateProfileName(UpdateProfileDTO data, MultipartFile profileImage) {
         try {
             String userId = userService.getCurrentUser();
             Profile profile = repo.findByUserId(userId);
 
-            //save the user name in a string
+            // save the user name in a string
             String username = data.getUsername();
 
             if (username == null || username.isEmpty()) {
@@ -69,8 +58,14 @@ public class ProfileServices {
             }
 
             profile.setUsername(username);
-            repo.save(profile);
 
+            // If profileImage is not null, upload it to Cloudinary
+            if (profileImage != null && !profileImage.isEmpty()) {
+                String secureUrl = cloud.uploadAndReturnUrl(profileImage);
+                profile.setProfilePictureUrl(secureUrl);
+            }
+
+            repo.save(profile);
             return "Profile updated successfully";
 
         } catch (Exception e) {
@@ -78,30 +73,8 @@ public class ProfileServices {
         }
     }
 
-    @Transactional
-    public String updateProfilePicture(MultipartFile file) {
-        try {
-            String userId = userService.getCurrentUser();
-            Profile profile = repo.findByUserId(userId);
-            String secureUrl = cloud.uploadAndReturnUrl(file);
-            profile.setProfilePictureUrl(secureUrl);
-            repo.save(profile);
-            return "Profile picture updated successfully";
-        } catch (Exception e) {
-            return "Error";
-        }
-    }
-
     public Profile getProfileByUserId(String userId) {
-        try {
-            return repo.findByUserId(userId);
-        } catch (Exception e) {
-            return null;
-        }
-
+        return repo.findByUserId(userId);
     }
-
-    
-
 
 }

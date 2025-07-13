@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,11 +38,13 @@ public class ProfileController {
 
     }
 
-    @PostMapping("/update/name")
-    public ResponseEntity<RegisterResponse<String>> updateProfile(@RequestBody UpdateProfileDTO data) {
+    @PostMapping("/update")
+    public ResponseEntity<RegisterResponse<String>> updateProfile(
+            @RequestPart(required = false) UpdateProfileDTO data,
+            @RequestPart(required = false) MultipartFile profileImage) {
         try {
             // Call the service to update the profile
-            String result = profileService.updateProfileName(data);
+            String result = profileService.updateProfileName(data, profileImage);
 
             if (result == null || "Error".equals(result)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -55,25 +56,6 @@ public class ProfileController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new RegisterResponse<>(false, "Failed to update Profile", null));
-        }
-    }
-
-    @PostMapping("/update/picture")
-    public ResponseEntity<RegisterResponse<String>> updateProfilePicture(@RequestPart MultipartFile file) {
-        try {
-            // Call the service to update the profile picture
-            String result = profileService.updateProfilePicture(file);
-
-            if (result == null || "Error".equals(result)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new RegisterResponse<>(false, "Failed to update Profile Picture", null));
-            }
-
-            return ResponseEntity.ok(new RegisterResponse<>(true, "Profile Picture updated successfully", result));
-
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new RegisterResponse<>(false, "Failed to update Profile Picture", null));
         }
     }
 

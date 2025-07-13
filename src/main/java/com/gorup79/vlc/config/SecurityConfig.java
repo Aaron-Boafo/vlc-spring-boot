@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.http.HttpStatus;
 
 @Configuration
 @EnableWebSecurity
@@ -31,19 +32,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        return http.csrf(customizer -> customizer.disable()).
-                cors(Customizer.withDefaults()).
-                authorizeHttpRequests(request -> request
-                        .requestMatchers("/login", "/register","reset-password").permitAll()
-                        .anyRequest().authenticated()).
-                httpBasic(Customizer.withDefaults()).  
-                sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        return http
+                .csrf(customizer -> customizer.disable())
+                .cors(Customizer.withDefaults())
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers("/login", "/register", "reset-password").permitAll()
+                        .anyRequest().authenticated())
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write(
+                                    "{\"error\":\"Unauthorized\",\"message\":\"You are not authorized to access this resource.\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write(
+                                    "{\"error\":\"Unauthorized\",\"message\":\"You are not authorized to access this resource.\"}");
+                        }))
                 .build();
-
+        // To handle 404 errors (endpoint not found), add the following property to
+        // application.properties:
+        // spring.mvc.throw-exception-if-no-handler-found=true
+        // spring.web.resources.add-mappings=false
 
     }
-
 
     @Bean
     @SuppressWarnings("deprecation")
@@ -67,13 +84,12 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("*") 
+                        .allowedOrigins("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(false);
             }
         };
     }
-
 
 }
