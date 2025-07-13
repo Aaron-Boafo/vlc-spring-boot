@@ -1,6 +1,7 @@
 package com.gorup79.vlc.controller;
 
 import java.util.List;
+import java.io.InputStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,11 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 
 import com.gorup79.vlc.dto.FileUploadDTO;
 import com.gorup79.vlc.model.Storage;
 import com.gorup79.vlc.response.RegisterResponse;
 import com.gorup79.vlc.service.StorageService;
+import static com.gorup79.vlc.repo.FileUploadProgressHandler.sessions;
 
 @RestController
 @CrossOrigin
@@ -69,10 +73,28 @@ public class StorageController {
 
     @PostMapping("/add")
     public ResponseEntity<RegisterResponse<?>> addStorageInfo(@RequestPart("metadata") FileUploadDTO metadata,
-            @RequestPart("file") MultipartFile file) {
-        System.out.println("Adding storage information: " + metadata + ", file: " + file.getOriginalFilename());
-        try {
+            @RequestPart("file") MultipartFile file, @RequestPart("sessionId") String sessionId) {
 
+        try (InputStream inputStream = file.getInputStream()) {
+
+            long totalBytes = file.getSize();
+            byte[] buffer = new byte[1024 * 100];
+            int bytesRead;
+            long uploaded = 0;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                uploaded += bytesRead;
+
+                // Send progress update over WebSocket
+                WebSocketSession session = sessions.get(sessionId);
+                if (session != null && session.isOpen()) {
+                    int progress = (int) ((uploaded * 100) / totalBytes);
+                    session.sendMessage(new TextMessage(progress + "%"));
+                }
+
+            }
+
+            // Add the file upload metadata and file to the storage
             String results = service.add(metadata, file);
 
             if ("Error".equals(results)) {

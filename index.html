@@ -1,58 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image and Username Upload</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        form { max-width: 400px; margin: auto; padding: 2em; border: 1px solid #ccc; border-radius: 8px; }
-        label { display: block; margin-bottom: 0.5em; }
-        input[type="text"], input[type="file"] { width: 100%; margin-bottom: 1em; }
-        button { padding: 0.5em 1.5em; }
-        #result { margin-top: 1em; }
-    </style>
-</head>
-<body>
-    <h2>Upload Image and Username</h2>
-    <form id="uploadForm">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" >
-
-        <label for="image">Select Image:</label>
-        <input type="file" id="image" name="image" accept="image/*" >
-
-        <button type="submit">Upload</button>
-    </form>
-    <div id="result"></div>
-
+<html>
+    <input type="file" id="fileInput" />
+    <button onclick="upload()">Upload</button>
+    <p id="progress"></p>
+    
     <script>
-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const imageFile = document.getElementById('image').files[0];
-        // if (!username || !imageFile) {
-        //     document.getElementById('result').textContent = 'Please provide both username and image.';
-        //     return;
-        // }
-        const formData = new FormData();
-        formData.append('profileImage', imageFile);
-        formData.append('data',new Blob([JSON.stringify({ username })], { type: 'application/json' }));
+        let socket = new WebSocket("ws://localhost:8080/upload-progress");
+        let sessionId = "";
 
-        try {
-            const response = await fetch('http://localhost:8080/profile/update', {
-                method: 'POST',
+        socket.onopen = function () {
+            console.log("WebSocket connected");
+        };
+
+        socket.onmessage = function (event) {
+            const message = event.data;
+
+            if (message.startsWith("SESSION_ID:")) {
+                sessionId = message.replace("SESSION_ID:", "");
+                console.log( sessionId);
+            } else {
+                document.getElementById("progress").innerText = event.data;
+
+            }
+        };
+
+    
+        function upload() {
+            const file = document.getElementById("fileInput").files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("sessionId", sessionId);
+            formData.append("metadata", new Blob([JSON.stringify({
+                fileName: file.name,
+                description: file.size.toString(),
+                fileType: file.type
+            })], { type: "application/json" }));
+
+            fetch("http://localhost:8080/storage/add", {
+                method: "POST",
                 body: formData,
                 headers: {
-                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIrMjMzNTE3MTM2MjE1IiwiaWF0IjoxNzUyNDIyNDc5LCJleHAiOjE3NTI5NDA4Nzl9.DLIrSacxIe9lUzxa53xqjhhWCRHUwRb3015E4QBSrDU' 
-                                    }
+                    Authorization:"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIrMjMzNTE3MTM2MjE1IiwiaWF0IjoxNzUyNDQ3MDMwLCJleHAiOjE3NTI5NjU0MzB9.NQXCmcXedAOwEokMy3A9Cl_OWfHR1CzsBjXxdjPY51A"
+                }
             });
-            const result = await response.json();
-            document.getElementById('result').textContent = JSON.stringify(result, null, 2);
-        } catch (err) {
-            document.getElementById('result').textContent = 'Upload failed: ' + err;
         }
-    });
     </script>
-</body>
+
 </html>
