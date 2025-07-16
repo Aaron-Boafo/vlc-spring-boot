@@ -85,10 +85,10 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:3000", "http://localhost:8080") // TODO: Replace with actual allowed origins in production
+                        .allowedOrigins("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true); // Set to true if you are using credentials (e.g., cookies, HTTP authentication)
+                        .allowCredentials(false);
             }
         };
     }
