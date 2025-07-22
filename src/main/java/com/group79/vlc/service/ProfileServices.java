@@ -57,7 +57,7 @@ public class ProfileServices {
     }
 
     @Transactional
-    public String updateProfileName(UpdateProfileDTO data, MultipartFile profileImage) {
+    public String updateProfileName(UpdateProfileDTO data) {
         String userId = userService.getCurrentUser();
         if (userId == null) {
             throw new IllegalStateException("User not authenticated.");
@@ -73,7 +73,27 @@ public class ProfileServices {
             profile.setUsername(username);
         }
 
-        // If profileImage is not null, upload it to Cloudinary
+        repo.save(profile);
+        return "Profile updated successfully";
+    }
+
+    public Profile getProfileByUserId(String userId) {
+        return repo.findByUserId(userId);
+    }
+
+    @Transactional
+    public String updateProfileImage(MultipartFile profileImage) {
+        String userId = userService.getCurrentUser();
+
+        if (userId == null) {
+            throw new IllegalStateException("User not authenticated.");
+        }
+
+        Profile profile = repo.findByUserId(userId);
+        if (profile == null) {
+            throw new IllegalStateException("Profile not found for user ID: " + userId);
+        }
+
         if (profileImage != null && !profileImage.isEmpty()) {
             String secureUrl = cloud.uploadAndReturnUrl(profileImage);
             if (secureUrl == null) {
@@ -84,10 +104,6 @@ public class ProfileServices {
 
         repo.save(profile);
         return "Profile updated successfully";
-    }
-
-    public Profile getProfileByUserId(String userId) {
-        return repo.findByUserId(userId);
     }
 
 }
